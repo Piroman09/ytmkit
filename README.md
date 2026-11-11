@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/ytmkit.svg)](https://www.npmjs.com/package/ytmkit)
 [![license](https://img.shields.io/npm/l/ytmkit.svg)](LICENSE)
 [![Node.js](https://img.shields.io/node/v/ytmkit.svg)](package.json)
+[![CI](https://github.com/Piroman09/ytmkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Piroman09/ytmkit/actions/workflows/ci.yml)
 [![GitHub](https://img.shields.io/badge/GitHub-Piroman09%2Fytmkit-181717?logo=github)](https://github.com/Piroman09/ytmkit)
 
 A friendly YouTube Music library for Node.js. Search, browse, and resolve playable audio streams — with stable result shapes instead of Google's raw response objects.
@@ -26,6 +27,8 @@ Built on [`youtubei.js`](https://github.com/LuanRT/YouTube.js), which tracks You
 
 - Node.js 18.3 or newer
 - ESM (`import`, not `require`)
+
+Development and CI use Node 22.12 or newer (required by Vitest 5). The published library targets Node 18.3+.
 
 ## Install
 
@@ -306,16 +309,23 @@ $env:YTMKIT_LIVE='1'; npm test
 
 ## Releasing (maintainers)
 
-The published package is `ytmkit`. Releases use npm's staged publishing flow, so a human approves the final release with 2FA:
+CI runs on every push and pull request (`.github/workflows/ci.yml`). Releases can be published from GitHub Actions with npm trusted publishing, so no npm token is needed:
 
-```bash
-npm version patch   # or minor / major
-npm stage publish
-```
+1. One-time setup: in npm package settings → **Trusted publishing**, add a GitHub Actions publisher:
+   - User: `Piroman09`
+   - Repository: `ytmkit`
+   - Workflow filename: `publish.yml`
+   - Allowed actions: allow `npm publish`
 
-Then open npmjs.com → **Settings → Staged Packages**, review the version, and click **Approve** (2FA required). `npm publish` also works if you authenticate with 2FA interactively.
+   The first publish from a new trusted publisher must happen within 2 days.
+2. Bump the version and push the tag:
+   ```bash
+   npm version patch   # or minor / major
+   git push --follow-tags
+   ```
+3. Create a GitHub Release for the new tag. This triggers `.github/workflows/publish.yml`, which publishes with OIDC and provenance.
 
-Never commit, paste into chat, or share an npm token. Prefer staged publishing or [trusted publishing](https://docs.npmjs.com/trusted-publishers/).
+If the trusted publisher is not configured, the manual fallback is `npm stage publish`, then approve the staged version in npm package settings with 2FA. Never commit, paste into chat, or share an npm token.
 
 ## Contributing
 

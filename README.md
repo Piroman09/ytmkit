@@ -291,10 +291,11 @@ YouTube's player script must run to decipher stream URLs. `ytmkit` runs it in a 
 
 ```bash
 npm install
-npm test          # unit tests, no network
+npm test               # unit tests, no network
 npm run typecheck
 npm run build
-npm run live      # live tests; set YTMKIT_LIVE=1 first
+npm run check:package  # verifies package metadata and the CLI bin
+npm run live           # live tests; set YTMKIT_LIVE=1 first
 ```
 
 Live tests:
@@ -319,9 +320,8 @@ If that prints "404 Not Found", the name is free.
 
 ```bash
 npm login
-npm test
-npm run build
-npm publish
+npm publish --dry-run   # optional: runs the checks and shows the tarball
+npm publish             # prepublishOnly runs typecheck + tests + build + package check
 ```
 
 Later releases:

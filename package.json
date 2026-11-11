@@ -12,12 +12,12 @@
     }
   },
   "bin": {
-    "ytmkit": "./dist/cli.js"
+    "ytmkit": "dist/cli.js"
   },
   "files": [
     "dist",
     "src",
-    "docs",
+    "docs/DESIGN.md",
     "README.md",
     "LICENSE"
   ],
@@ -30,15 +30,20 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "live": "vitest run tests/live.test.ts",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "check:package": "node scripts/check-package.mjs",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build && npm run check:package"
   },
   "keywords": [
+    "youtube",
     "youtube-music",
     "ytmusic",
     "innertube",
     "music",
     "streaming",
-    "client"
+    "audio",
+    "proxy",
+    "client",
+    "typescript"
   ],
   "license": "MIT",
   "dependencies": {

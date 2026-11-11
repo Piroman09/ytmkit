@@ -1,5 +1,10 @@
 # ytmkit
 
+[![npm version](https://img.shields.io/npm/v/ytmkit.svg)](https://www.npmjs.com/package/ytmkit)
+[![license](https://img.shields.io/npm/l/ytmkit.svg)](LICENSE)
+[![Node.js](https://img.shields.io/node/v/ytmkit.svg)](package.json)
+[![GitHub](https://img.shields.io/badge/GitHub-Piroman09%2Fytmkit-181717?logo=github)](https://github.com/Piroman09/ytmkit)
+
 A friendly YouTube Music library for Node.js. Search, browse, and resolve playable audio streams — with stable result shapes instead of Google's raw response objects.
 
 > **Unofficial.** Not affiliated with, endorsed by, or sponsored by Google or YouTube. It uses YouTube Music's internal API. Google can change or block it at any time. Use your own account and follow the terms you agreed to.
@@ -26,17 +31,6 @@ Built on [`youtubei.js`](https://github.com/LuanRT/YouTube.js), which tracks You
 
 ```bash
 npm install ytmkit
-```
-
-Not published yet? Install straight from this folder:
-
-```bash
-# in this library folder
-npm install
-npm run build
-
-# in your client app
-npm install /absolute/path/to/ytmkit
 ```
 
 ## Quick start
@@ -290,6 +284,8 @@ YouTube's player script must run to decipher stream URLs. `ytmkit` runs it in a 
 ## Development
 
 ```bash
+git clone https://github.com/Piroman09/ytmkit.git
+cd ytmkit
 npm install
 npm test               # unit tests, no network
 npm run typecheck
@@ -308,28 +304,31 @@ YTMKIT_LIVE=1 npm test
 $env:YTMKIT_LIVE='1'; npm test
 ```
 
-## Publishing your own copy
+## Releasing (maintainers)
 
-The npm name `ytmkit` was available when this was written. Check first:
-
-```bash
-npm view ytmkit version
-```
-
-If that prints "404 Not Found", the name is free.
-
-```bash
-npm login
-npm publish --dry-run   # optional: runs the checks and shows the tarball
-npm publish             # prepublishOnly runs typecheck + tests + build + package check
-```
-
-Later releases:
+The published package is `ytmkit`. Releases use npm's staged publishing flow, so a human approves the final release with 2FA:
 
 ```bash
 npm version patch   # or minor / major
-npm publish
+npm stage publish
 ```
+
+Then open npmjs.com → **Settings → Staged Packages**, review the version, and click **Approve** (2FA required). `npm publish` also works if you authenticate with 2FA interactively.
+
+Never commit, paste into chat, or share an npm token. Prefer staged publishing or [trusted publishing](https://docs.npmjs.com/trusted-publishers/).
+
+## Contributing
+
+Issues and pull requests are welcome. Before opening a PR:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+npm run check:package
+```
+
+Please don't include cookies, tokens, or private account data in issues or logs.
 
 ## Roadmap
 

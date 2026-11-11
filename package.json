@@ -2,6 +2,14 @@
   "name": "ytmkit",
   "version": "0.2.0",
   "description": "Friendly YouTube Music library: metadata, search, playable streams, and a local stream proxy.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Piroman09/ytmkit.git"
+  },
+  "homepage": "https://github.com/Piroman09/ytmkit#readme",
+  "bugs": {
+    "url": "https://github.com/Piroman09/ytmkit/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

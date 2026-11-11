@@ -1,0 +1,52 @@
+{
+  "name": "ytmkit",
+  "version": "0.1.0",
+  "description": "A friendly YouTube Music client library: normalized metadata, search, and playable audio streams.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "ytmkit": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "live": "vitest run tests/live.test.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": [
+    "youtube-music",
+    "ytmusic",
+    "innertube",
+    "music",
+    "streaming",
+    "client"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "youtubei.js": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.1.0"
+  }
+}

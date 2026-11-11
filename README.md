@@ -11,6 +11,7 @@ A friendly YouTube Music library for Node.js. Search, browse, and resolve playab
 - Resolve **audio-only** stream URLs (Opus and AAC)
 - Select a codec or a specific itag
 - Report stream expiry and refresh a playback session
+- Serve a local stream proxy with CORS, seeking, caching, and automatic refresh
 - Optionally sign in with your own cookie
 - Run everything from a CLI with JSON output, so non-JavaScript clients can use the same data
 
@@ -115,6 +116,46 @@ await ytm.getStream('dQw4w9WgXcQ', { itag: 251 });    // force a format
 }
 ```
 
+## Local stream proxy (for browser clients)
+
+Browsers have two problems with googlevideo URLs: they expire, and CORS/seek behavior is awkward. The proxy fixes both. It runs on your machine, resolves URLs with your client, and serves the audio itself:
+
+```js
+import { createClient, createStreamProxy } from 'ytmkit';
+
+const client = await createClient();
+
+const proxy = await createStreamProxy({
+  client,            // optional; omit and the proxy creates its own client
+  port: 8080,        // optional; default is a random free port
+  corsOrigin: '*',   // default; pass false to disable CORS
+});
+
+console.log(proxy.streamUrl('dQw4w9WgXcQ'));
+// http://127.0.0.1:8080/stream/dQw4w9WgXcQ
+
+// In a browser:
+// <audio controls src="http://127.0.0.1:8080/stream/dQw4w9WgXcQ"></audio>
+
+await proxy.close();
+```
+
+What it does:
+
+- Adds CORS headers and handles `OPTIONS` preflight
+- Forwards `Range` requests, so seeking works in `<audio>` and `<video>`
+- Caches resolved URLs and refreshes them two minutes before expiry
+- Retries once with a fresh URL if Google returns `403` or `410`
+- Accepts `?codec=opus|aac` and `?itag=251` on stream URLs
+
+Or run it from the CLI:
+
+```bash
+npx ytmkit proxy --port 8080
+```
+
+**Security:** the proxy binds to `127.0.0.1` by default and has no authentication. With the default `corsOrigin: '*'`, any web page open in your browser can call it and use whatever account the client is signed in with. If that matters, set `corsOrigin` to your app's origin (for example `'http://localhost:5173'`) and keep the port off your network.
+
 ## Signing in (optional)
 
 Most read-only requests work without an account. For your library, subscriptions, or personalized results, pass a cookie copied from a signed-in browser:
@@ -148,6 +189,7 @@ npx ytmkit playlist VLPLdXJrX9OsbOVq2TKvUc3xGUp2Rm8nTUVh --limit 20
 npx ytmkit artist UCRr1xG_2WIDs18a6cIiCxeA
 npx ytmkit stream dQw4w9WgXcQ
 npx ytmkit lyrics dQw4w9WgXcQ
+npx ytmkit proxy --port 8080
 
 # Machine-readable JSON
 npx ytmkit search "daft punk" --type all --json > results.json
@@ -180,12 +222,18 @@ client.getLyrics(videoId): Promise<string | null>
 client.getStream(videoId, options?): Promise<StreamInfo>
 client.openPlayback(videoId, options?): Promise<PlaybackSession>
 
+createStreamProxy(options?): Promise<StreamProxy>
+
 session.url: string
 session.current: StreamInfo
 session.expiresAt: Date | null
 session.isExpired: boolean
 session.expiresInMs(): number | null
 session.refresh(): Promise<StreamInfo>
+
+proxy.url: string
+proxy.streamUrl(videoId, options?): string
+proxy.close(): Promise<void>
 ```
 
 - `search()` `limit` caps **each** category.
@@ -221,6 +269,7 @@ The output is stable and documented by the types in [`src/types.ts`](src/types.t
 src/client.ts     public methods, validation, error wrapping
 src/normalize.ts  youtubei.js nodes -> plain JSON models
 src/playback.ts   format selection, expiry, refreshable sessions
+src/proxy.ts      local CORS + Range stream proxy with URL caching/refresh
 src/evaluator.ts  sandboxed node:vm evaluator for YouTube's player script
 src/cli.ts        command-line interface
 ```
@@ -235,7 +284,8 @@ YouTube's player script must run to decipher stream URLs. `ytmkit` runs it in a 
 - **poToken.** Some networks/accounts require an attestation token; the library accepts one but cannot generate it.
 - **Playlist track metadata.** YouTube Music does not always include structured artist/album data for playlist items. Those fields can be empty; call `getSong(id)` for details.
 - **Rate limits.** This is not a bulk-scraping tool. Be reasonable.
-- **Not for browsers directly.** Cookies and `node:vm` make this a server-side/desktop library. Keep it in your main process, not in a renderer.
+- **Not for browsers directly.** Cookies and `node:vm` make this a server-side/desktop library. Keep it in your main process, not in a renderer. Use the local proxy for renderer `<audio>` tags.
+- **The proxy has no authentication.** It binds to localhost by default. Anyone or any page that can reach the port can use it.
 
 ## Development
 
@@ -283,9 +333,9 @@ npm publish
 
 ## Roadmap
 
-1. Stream proxy server (CORS + expiry handling for browser clients).
-2. Device-code auth.
-3. Recorded fixtures + a conformance suite for non-JS ports.
+1. Device-code auth.
+2. Recorded fixtures + a conformance suite for non-JS ports.
+3. Proxy access tokens for shared machines.
 4. Library actions: like, add to playlist, uploads.
 5. Optional yt-dlp extractor fallback.
 

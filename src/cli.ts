@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { createClient } from './client.js';
 import { YtmkitError, badInput } from './errors.js';
+import { createStreamProxy } from './proxy.js';
 import type { AlbumSummary, ArtistSummary, PlaylistSummary, SearchResults, Track } from './types.js';
 
 const VERSION = (
@@ -24,12 +25,15 @@ Usage:
   ytmkit artist <artistId> [--json]
   ytmkit lyrics <videoId> [--json]
   ytmkit stream <videoId> [--codec opus|aac|any] [--json]
+  ytmkit proxy [--port N] [--host H] [--json]
 
 Options:
   --cookie <cookie>  Cookie header copied from a signed-in music.youtube.com tab
                      (or set YTMKIT_COOKIE).
   --json             Print machine-readable JSON. search --json always prints
                      all five categories, regardless of --type.
+  --port <port>      proxy only: port to listen on (default: random free port).
+  --host <host>      proxy only: host to bind (default: 127.0.0.1).
   -h, --help         Show this help.
   -v, --version      Print the version.
 
@@ -37,6 +41,7 @@ Examples:
   ytmkit search "daft punk" --type songs
   ytmkit album MPREb_K8qWMWVqXGi
   ytmkit stream dQw4w9WgXcQ
+  ytmkit proxy --port 8080
   ytmkit search "daft punk" --type all --json > results.json
 
 Unofficial project. Not affiliated with Google or YouTube.`;
@@ -47,6 +52,8 @@ interface Values {
   limit?: string;
   codec?: string;
   cookie?: string;
+  port?: string;
+  host?: string;
   help?: boolean;
   version?: boolean;
 }
@@ -147,6 +154,8 @@ async function run(): Promise<void> {
       limit: { type: 'string' },
       codec: { type: 'string' },
       cookie: { type: 'string' },
+      port: { type: 'string' },
+      host: { type: 'string' },
       help: { type: 'boolean', short: 'h', default: false },
       version: { type: 'boolean', short: 'v', default: false },
     },
@@ -170,6 +179,38 @@ async function run(): Promise<void> {
   }
 
   const cookie = values.cookie ?? process.env.YTMKIT_COOKIE;
+
+  if (command === 'proxy') {
+    const port = values.port === undefined ? undefined : Number(values.port);
+    if (port !== undefined && (!Number.isInteger(port) || port < 0 || port > 65535)) {
+      throw badInput('--port must be an integer between 0 and 65535');
+    }
+
+    const proxy = await createStreamProxy({
+      ...(cookie ? { clientOptions: { cookie } } : {}),
+      ...(port !== undefined ? { port } : {}),
+      ...(values.host ? { host: values.host } : {}),
+    });
+    const example = proxy.streamUrl('dQw4w9WgXcQ');
+
+    if (values.json) {
+      printJson({ url: proxy.url, health: `${proxy.url}/health`, stream: example });
+    } else {
+      console.log('ytmkit stream proxy');
+      console.log(`  local:  ${proxy.url}`);
+      console.log(`  health: ${proxy.url}/health`);
+      console.log(`  stream: ${example}`);
+      console.log('  Press Ctrl+C to stop.');
+    }
+
+    const shutdown = (): void => {
+      void proxy.close().finally(() => process.exit(0));
+    };
+    process.once('SIGINT', shutdown);
+    process.once('SIGTERM', shutdown);
+    return;
+  }
+
   const client = await createClient(cookie ? { cookie } : {});
 
   switch (command) {

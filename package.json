@@ -1,7 +1,7 @@
 {
   "name": "ytmkit",
-  "version": "0.1.0",
-  "description": "A friendly YouTube Music client library: normalized metadata, search, and playable audio streams.",
+  "version": "0.2.0",
+  "description": "Friendly YouTube Music library: metadata, search, playable streams, and a local stream proxy.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

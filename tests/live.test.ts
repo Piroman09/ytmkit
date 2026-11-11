@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createClient } from '../src/index.js';
+import { createClient, createStreamProxy } from '../src/index.js';
 
 const live = process.env.YTMKIT_LIVE === '1';
 
@@ -27,5 +27,21 @@ describe.skipIf(!live)('live YouTube Music', () => {
     const session = await client.openPlayback('dQw4w9WgXcQ', { codec: 'aac' });
     expect(session.current.selected.itag).toBe(140);
     expect(session.isExpired).toBe(false);
+
+    const proxy = await createStreamProxy({ client });
+    try {
+      const proxied = await fetch(proxy.streamUrl('dQw4w9WgXcQ'), {
+        headers: { Range: 'bytes=0-2047' },
+      });
+      expect(proxied.status).toBe(206);
+      expect(proxied.headers.get('access-control-allow-origin')).toBe('*');
+      expect(proxied.headers.get('content-type')).toMatch(/audio\//);
+      expect(proxied.headers.get('content-range')).toMatch(/^bytes 0-2047\//);
+      const bytes = new Uint8Array(await proxied.arrayBuffer());
+      expect(bytes.length).toBeGreaterThan(0);
+      expect(bytes.length).toBeLessThanOrEqual(2048);
+    } finally {
+      await proxy.close();
+    }
   }, 60_000);
 });
